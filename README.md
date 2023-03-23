@@ -30,7 +30,7 @@ Please note that the performance of the Loopback Scaler depends on the GPU, inpu
 4. Relaunch the webui by running the `webui-user.bat` file.
 5. Open your web browser and navigate to the Automatic1111 page or refresh the page if it's already open.
 
-#Settings Guide
+# Settings Guide
 
 ## Loops
 The number of times the script will inference your image and increase the resolution in increments. The amount the resolution is increased each loop is determined by this number and the maximum image width/height. The more loops, the more chances of your image picking up more detail, but also artifacts. 4 to 10 is what I find to work best, but you may like more or less.
