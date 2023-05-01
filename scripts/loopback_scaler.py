@@ -30,8 +30,8 @@ class Script(scripts.Script):
                     adaptive_increment_factor = gr.Slider(minimum=0.5, maximum=2.0, step=0.1, label='Adaptive Change:', value=1.0, elem_id=self.elem_id("adaptive_increment_factor"))
             with gr.Box():
                 with gr.Row():
-                    max_width = gr.Slider(minimum=512, maximum=2048, step=64, label='Maximum Image Width:', value=1024, elem_id=self.elem_id("max_width"))
-                    max_height = gr.Slider(minimum=512, maximum=2048, step=64, label='Maximum Image Height:', value=1024, elem_id=self.elem_id("max_height"))
+                    max_width = gr.Slider(minimum=512, maximum=4096, step=64, label='Maximum Image Width:', value=1024, elem_id=self.elem_id("max_width"))
+                    max_height = gr.Slider(minimum=512, maximum=4096, step=64, label='Maximum Image Height:', value=1024, elem_id=self.elem_id("max_height"))
             with gr.Box():
                 with gr.Row():
                     detail_strength = gr.Dropdown(label='Add Detail', choices=self.detail_choices, value="None", elem_id=self.elem_id("detail_strength"))
