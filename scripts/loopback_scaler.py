@@ -56,6 +56,13 @@ class Script(scripts.Script):
     def __get_height_from_ratio(self, width, ratio):
         new_height = math.floor(width * ratio)
         return new_height
+    
+    def __get_strength_iterations(self, strength):
+        if strength == "None": return 0
+        elif strength == "Low": return 1
+        elif strength == "Medium": return 2
+        elif strength == "High": return 3
+        return 0
 
     def run(self, p, _, loops, denoising_strength_change_factor, max_width, max_height, detail_strength, blur_strength, contour_bool, smooth_strength, sharpness_strength, brightness_strength, color_strength, contrast_strength, adaptive_increment_factor):
         processing.fix_seed(p)
@@ -117,19 +124,20 @@ class Script(scripts.Script):
 
                 avg_intensity = np.mean(p.init_images[0])
                 adaptive_increment = int(loop_increment * (avg_intensity / 255) * adaptive_increment_factor)
+                print(f"Loopback Scaler iteration {i}")
                 print(f"adaptive_increment: {adaptive_increment}")
 
                 if i < loops - 1:
-                    if use_height == True:
+                    if use_height:
                         newheight = p.height + adaptive_increment
                         p.height = newheight
                         p.width = self.__get_width_from_ratio(newheight, current_ratio)
-                    elif use_height == False:
+                    else:
                         newwidth = p.width + adaptive_increment
                         p.width = newwidth
                         p.height = self.__get_height_from_ratio(newwidth, current_ratio)
                 else:
-                    if use_height == True:
+                    if use_height:
                         p.height = max_height
                         p.width = self.__get_width_from_ratio(max_height, current_ratio)
                     else:
@@ -143,39 +151,21 @@ class Script(scripts.Script):
                 
                 processed = processing.process_images(p)
                 
-                if i == loops - 1:              
+                if i == loops - 1: # Last image          
                     processed.images[0] = ImageEnhance.Sharpness(processed.images[0]).enhance(sharpness_strength)
                     processed.images[0] = ImageEnhance.Brightness(processed.images[0]).enhance(brightness_strength)
                     processed.images[0] = ImageEnhance.Color(processed.images[0]).enhance(color_strength)
                     processed.images[0] = ImageEnhance.Contrast(processed.images[0]).enhance(contrast_strength)
                     
-                    if not detail_strength == "None":
-                        if detail_strength == "Low":
-                            processed.images[0] = processed.images[0].filter(ImageFilter.DETAIL)
-                        elif detail_strength == "Medium":
-                            for j in range(2):
-                                processed.images[0] = processed.images[0].filter(ImageFilter.DETAIL)
-                        elif detail_strength == "High":
-                            for j in range(3):
-                                processed.images[0] = processed.images[0].filter(ImageFilter.DETAIL)
-                    if not smooth_strength == "None":
-                        if smooth_strength == "Low":
-                            processed.images[0] = processed.images[0].filter(ImageFilter.SMOOTH)
-                        elif smooth_strength == "Medium":
-                            for j in range(2):
-                                processed.images[0] = processed.images[0].filter(ImageFilter.SMOOTH)
-                        elif smooth_strength == "High":
-                            for j in range(3):
-                                processed.images[0] = processed.images[0].filter(ImageFilter.SMOOTH)
-                    if not blur_strength == "None":
-                        if blur_strength == "Low":
-                            processed.images[0] = processed.images[0].filter(ImageFilter.BLUR)
-                        elif blur_strength == "Medium":
-                            for j in range(2):
-                                processed.images[0] = processed.images[0].filter(ImageFilter.BLUR)
-                        elif blur_strength == "High":
-                            for j in range(3):
-                                processed.images[0] = processed.images[0].filter(ImageFilter.BLUR)
+                    for j in range(self.__get_strength_iterations(detail_strength)):
+                        processed.images[0] = processed.images[0].filter(ImageFilter.DETAIL)
+
+                    for j in range(self.__get_strength_iterations(smooth_strength)):
+                        processed.images[0] = processed.images[0].filter(ImageFilter.SMOOTH)
+
+                    for j in range(self.__get_strength_iterations(blur_strength)):
+                        processed.images[0] = processed.images[0].filter(ImageFilter.BLUR)
+
                     if contour_bool == True:
                         processed.images[0] = processed.images[0].filter(ImageFilter.CONTOUR)
                     
