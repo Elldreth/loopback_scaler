@@ -130,6 +130,7 @@ class Script(scripts.Script):
 
                 avg_intensity = np.mean(p.init_images[0])
                 adaptive_increment = int(loop_increment * (avg_intensity / 255) * adaptive_increment_factor)
+                print()
                 print(f"Loopback Scaler:    {i+1}/{loops}")
                 print(f"adaptive_increment: {adaptive_increment}")
                 
