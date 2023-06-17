@@ -98,8 +98,8 @@ class Script(scripts.Script):
         #determine oritinal image h/w ratio and max h/w ratio
         current_ratio = p.height / p.width
         
-        final_height = p.height * scale if use_scale else max_height
-        final_width = p.width * scale if use_scale else max_width
+        final_height = int(p.height * scale) if use_scale else max_height
+        final_width = int(p.width * scale) if use_scale else max_width
         
         max_ratio = final_height / final_width
         use_height = current_ratio >= max_ratio
