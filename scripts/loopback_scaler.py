@@ -32,6 +32,9 @@ class Script(scripts.Script):
                 with gr.Row():
                     max_width = gr.Slider(minimum=512, maximum=4096, step=64, label='Maximum Image Width:', value=1024, elem_id=self.elem_id("max_width"))
                     max_height = gr.Slider(minimum=512, maximum=4096, step=64, label='Maximum Image Height:', value=1024, elem_id=self.elem_id("max_height"))
+                with gr.Row():
+                    use_scale =  gr.Checkbox(label='Use Scale', value=False, elem_id=self.elem_id("use_scale"))
+                    scale = gr.Slider(minimum=.5, maximum=4, step=.1, label='Scale Final Image:', value=1, elem_id=self.elem_id("final_image_scale"))
             with gr.Box():
                 with gr.Row():
                     detail_strength = gr.Dropdown(label='Add Detail', choices=self.detail_choices, value="None", elem_id=self.elem_id("detail_strength"))
@@ -47,7 +50,7 @@ class Script(scripts.Script):
                     contrast_strength = gr.Slider(minimum=0.1, maximum=2.0, step=0.01, label='Contrast:', value=1.0, elem_id=self.elem_id("contrast_strength"))
             with gr.Accordion("Info - Loopback Scaler", open=False):
                 helpinfo = gr.HTML("<p style=\"margin-bottom:0.75em\">{}</p>".format(self.help_text))
-        return [helpinfo, loops, denoising_strength_change_factor, max_width, max_height, detail_strength, blur_strength, contour_bool, smooth_strength, sharpness_strength, brightness_strength, color_strength, contrast_strength, adaptive_increment_factor]
+        return [helpinfo, loops, denoising_strength_change_factor, max_width, max_height, scale, use_scale, detail_strength, blur_strength, contour_bool, smooth_strength, sharpness_strength, brightness_strength, color_strength, contrast_strength, adaptive_increment_factor]
 
     def __get_width_from_ratio(self, height, ratio):
         new_width = math.floor(height / ratio)
@@ -64,7 +67,7 @@ class Script(scripts.Script):
         elif strength == "High": return 3
         return 0
 
-    def run(self, p, _, loops, denoising_strength_change_factor, max_width, max_height, detail_strength, blur_strength, contour_bool, smooth_strength, sharpness_strength, brightness_strength, color_strength, contrast_strength, adaptive_increment_factor):
+    def run(self, p, _, loops, denoising_strength_change_factor, max_width, max_height, scale, use_scale, detail_strength, blur_strength, contour_bool, smooth_strength, sharpness_strength, brightness_strength, color_strength, contrast_strength, adaptive_increment_factor):
         processing.fix_seed(p)
         batch_count = p.n_iter
         p.extra_generation_params = {
@@ -94,20 +97,24 @@ class Script(scripts.Script):
 
         #determine oritinal image h/w ratio and max h/w ratio
         current_ratio = p.height / p.width
-        max_ratio = max_height / max_width
+        
+        final_height = p.height * scale if use_scale else max_height
+        final_width = p.width * scale if use_scale else max_width
+        
+        max_ratio = final_height / final_width
         use_height = current_ratio >= max_ratio
                     
         #set loop increment to the lower of height/width and height if equal
         if current_ratio < max_ratio:
             #width will hit max first
-            loop_increment = math.floor((max_width - p.width)/loops)
+            loop_increment = math.floor((final_width - p.width)/loops)
         else:
             # height will hit max first
             # OR if current_ratio and max_ratio are the same, they will hit max at the same time
-            loop_increment = math.floor((max_height - p.height)/loops)
+            loop_increment = math.floor((final_height - p.height)/loops)
             
         print(f"Original size: {p.width}x{p.height}")
-        print(f"Final size:    {max_width}x{max_height}")
+        print(f"Final size:    {final_width}x{final_height}")
         
         for n in range(batch_count):
             history = []
@@ -128,10 +135,10 @@ class Script(scripts.Script):
                 last_image = i == loops - 1
                 
                 if use_height:
-                    p.height = max_height if last_image else (p.height + adaptive_increment)
+                    p.height = final_height if last_image else (p.height + adaptive_increment)
                     p.width = self.__get_width_from_ratio(p.height, current_ratio)
                 else:
-                    p.width = max_width if last_image else (p.width + adaptive_increment)
+                    p.width = final_width if last_image else (p.width + adaptive_increment)
                     p.height = self.__get_height_from_ratio(p.width, current_ratio)
                     
                 print(f"Iteration size: {p.width}x{p.height}")
