@@ -113,6 +113,7 @@ class Script(scripts.Script):
             # OR if current_ratio and max_ratio are the same, they will hit max at the same time
             loop_increment = math.floor((final_height - p.height)/loops)
             
+        print("Starting Loopback Scaler")
         print(f"Original size: {p.width}x{p.height}")
         print(f"Final size:    {final_width}x{final_height}")
         
@@ -129,7 +130,7 @@ class Script(scripts.Script):
 
                 avg_intensity = np.mean(p.init_images[0])
                 adaptive_increment = int(loop_increment * (avg_intensity / 255) * adaptive_increment_factor)
-                print(f"Loopback Scaler iteration {i+1}/{loops}")
+                print(f"Loopback Scaler:    {i+1}/{loops}")
                 print(f"adaptive_increment: {adaptive_increment}")
                 
                 last_image = i == loops - 1
@@ -141,7 +142,7 @@ class Script(scripts.Script):
                     p.width = final_width if last_image else (p.width + adaptive_increment)
                     p.height = self.__get_height_from_ratio(p.width, current_ratio)
                     
-                print(f"Iteration size: {p.width}x{p.height}")
+                print(f"Iteration size:     {p.width}x{p.height}")
 
                 if opts.img2img_color_correction:
                     p.color_corrections = initial_color_corrections
