@@ -186,9 +186,10 @@ class Script(scripts.Script):
                 p.all_prompts.append(p.prompt)
 
                 p.denoising_strength = min(max(p.denoising_strength * denoising_strength_change_factor, 0.1), 1)
-                
+            
             all_images += history
 
+        print("Loopback Scaler: All Done!")
         processed = Processed(p, all_images, p.all_seeds, initial_info,)
         
         return processed
