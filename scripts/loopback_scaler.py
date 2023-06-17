@@ -7,7 +7,7 @@ from modules.processing import Processed
 from modules.shared import opts, state
 
 # Import PIL libraries
-from PIL import Image, ImageFilter, ImageEnhance
+from PIL import ImageFilter, ImageEnhance
 
 # This is a modification of the Loopback script. Thank you to the original author for making this available.
 # This modification came from a process that I learned from the AI community to improve details and prepare an
@@ -75,16 +75,13 @@ class Script(scripts.Script):
         p.batch_size = 1
         p.n_iter = 1
 
-        output_images, info = None, None
         initial_seed = None
         initial_info = None
 
-        grids = []
         all_images = []
         original_init_image = p.init_images
         original_prompt = p.prompt
         state.job_count = loops * batch_count
-
        
         initial_color_corrections = [processing.setup_color_correction(p.init_images[0])]
 
@@ -199,15 +196,7 @@ class Script(scripts.Script):
 
                 p.denoising_strength = min(max(p.denoising_strength * denoising_strength_change_factor, 0.1), 1)
                 
-            # grid = images.image_grid(history, rows=1)
-            # if opts.grid_save:
-            #     images.save_image(grid, p.outpath_grids, "grid", initial_seed, original_prompt, opts.grid_format, info=info, short_filename=not opts.grid_extended_filename, grid=True, p=p)
-
-            #grids.append(grid)
             all_images += history
-
-        #if opts.return_grid:
-        #    all_images = grids + all_images
 
         processed = Processed(p, all_images, p.all_seeds, initial_info,)
         
