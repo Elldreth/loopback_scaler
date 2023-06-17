@@ -95,21 +95,16 @@ class Script(scripts.Script):
         #determine oritinal image h/w ratio and max h/w ratio
         current_ratio = p.height / p.width
         max_ratio = max_height / max_width
-        use_height = False
+        use_height = current_ratio >= max_ratio
                     
         #set loop increment to the lower of height/width and height if equal
         if current_ratio < max_ratio:
             #width will hit max first
             loop_increment = math.floor((max_width - p.width)/loops)
-            use_height = False
-        elif current_ratio > max_ratio:
-            #height will hit max first
-            loop_increment = math.floor((max_height - p.height)/loops)
-            use_height = True
         else:
-            #if current_ratio and max_ratio are the same, they will hit max at the same time
+            # height will hit max first
+            # OR if current_ratio and max_ratio are the same, they will hit max at the same time
             loop_increment = math.floor((max_height - p.height)/loops)
-            use_height = True
         
         for n in range(batch_count):
             history = []
@@ -126,23 +121,15 @@ class Script(scripts.Script):
                 adaptive_increment = int(loop_increment * (avg_intensity / 255) * adaptive_increment_factor)
                 print(f"Loopback Scaler iteration {i}")
                 print(f"adaptive_increment: {adaptive_increment}")
-
-                if i < loops - 1:
-                    if use_height:
-                        newheight = p.height + adaptive_increment
-                        p.height = newheight
-                        p.width = self.__get_width_from_ratio(newheight, current_ratio)
-                    else:
-                        newwidth = p.width + adaptive_increment
-                        p.width = newwidth
-                        p.height = self.__get_height_from_ratio(newwidth, current_ratio)
+                
+                last_image = i == loops - 1
+                
+                if use_height:
+                    p.height = max_height if last_image else (p.height + adaptive_increment)
+                    p.width = self.__get_width_from_ratio(p.height, current_ratio)
                 else:
-                    if use_height:
-                        p.height = max_height
-                        p.width = self.__get_width_from_ratio(max_height, current_ratio)
-                    else:
-                        p.width = max_width
-                        p.height = self.__get_height_from_ratio(max_width, current_ratio)
+                    p.width = max_width if last_image else (p.width + adaptive_increment)
+                    p.height = self.__get_height_from_ratio(p.width, current_ratio)
 
                 if opts.img2img_color_correction:
                     p.color_corrections = initial_color_corrections
@@ -151,7 +138,7 @@ class Script(scripts.Script):
                 
                 processed = processing.process_images(p)
                 
-                if i == loops - 1: # Last image          
+                if last_image:        
                     processed.images[0] = ImageEnhance.Sharpness(processed.images[0]).enhance(sharpness_strength)
                     processed.images[0] = ImageEnhance.Brightness(processed.images[0]).enhance(brightness_strength)
                     processed.images[0] = ImageEnhance.Color(processed.images[0]).enhance(color_strength)
