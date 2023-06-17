@@ -105,6 +105,9 @@ class Script(scripts.Script):
             # height will hit max first
             # OR if current_ratio and max_ratio are the same, they will hit max at the same time
             loop_increment = math.floor((max_height - p.height)/loops)
+            
+        print(f"Original size: {p.width}x{p.height}")
+        print(f"Final size:    {max_width}x{max_height}")
         
         for n in range(batch_count):
             history = []
