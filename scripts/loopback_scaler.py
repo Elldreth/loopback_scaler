@@ -119,7 +119,7 @@ class Script(scripts.Script):
 
                 avg_intensity = np.mean(p.init_images[0])
                 adaptive_increment = int(loop_increment * (avg_intensity / 255) * adaptive_increment_factor)
-                print(f"Loopback Scaler iteration {i}")
+                print(f"Loopback Scaler iteration {i+1}/{loops}")
                 print(f"adaptive_increment: {adaptive_increment}")
                 
                 last_image = i == loops - 1
@@ -130,6 +130,8 @@ class Script(scripts.Script):
                 else:
                     p.width = max_width if last_image else (p.width + adaptive_increment)
                     p.height = self.__get_height_from_ratio(p.width, current_ratio)
+                    
+                print(f"Iteration size: {p.width}x{p.height}")
 
                 if opts.img2img_color_correction:
                     p.color_corrections = initial_color_corrections
