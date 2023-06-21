@@ -7,7 +7,7 @@ from modules.processing import Processed
 from modules.shared import opts, state
 
 # Import PIL libraries
-from PIL import Image, ImageFilter, ImageEnhance
+from PIL import ImageFilter, ImageEnhance
 
 # This is a modification of the Loopback script. Thank you to the original author for making this available.
 # This modification came from a process that I learned from the AI community to improve details and prepare an
@@ -56,6 +56,13 @@ class Script(scripts.Script):
     def __get_height_from_ratio(self, width, ratio):
         new_height = math.floor(width * ratio)
         return new_height
+    
+    def __get_strength_iterations(self, strength):
+        if strength == "None": return 0
+        elif strength == "Low": return 1
+        elif strength == "Medium": return 2
+        elif strength == "High": return 3
+        return 0
 
     def run(self, p, _, loops, denoising_strength_change_factor, max_width, max_height, detail_strength, blur_strength, contour_bool, smooth_strength, sharpness_strength, brightness_strength, color_strength, contrast_strength, adaptive_increment_factor):
         processing.fix_seed(p)
@@ -75,37 +82,29 @@ class Script(scripts.Script):
         p.batch_size = 1
         p.n_iter = 1
 
-        output_images, info = None, None
         initial_seed = None
         initial_info = None
 
-        grids = []
         all_images = []
         original_init_image = p.init_images
         original_prompt = p.prompt
         state.job_count = loops * batch_count
-
        
         initial_color_corrections = [processing.setup_color_correction(p.init_images[0])]
 
         #determine oritinal image h/w ratio and max h/w ratio
         current_ratio = p.height / p.width
         max_ratio = max_height / max_width
-        use_height = False
+        use_height = current_ratio >= max_ratio
                     
         #set loop increment to the lower of height/width and height if equal
         if current_ratio < max_ratio:
             #width will hit max first
             loop_increment = math.floor((max_width - p.width)/loops)
-            use_height = False
-        elif current_ratio > max_ratio:
-            #height will hit max first
-            loop_increment = math.floor((max_height - p.height)/loops)
-            use_height = True
         else:
-            #if current_ratio and max_ratio are the same, they will hit max at the same time
+            # height will hit max first
+            # OR if current_ratio and max_ratio are the same, they will hit max at the same time
             loop_increment = math.floor((max_height - p.height)/loops)
-            use_height = True
         
         for n in range(batch_count):
             history = []
@@ -120,24 +119,17 @@ class Script(scripts.Script):
 
                 avg_intensity = np.mean(p.init_images[0])
                 adaptive_increment = int(loop_increment * (avg_intensity / 255) * adaptive_increment_factor)
+                print(f"Loopback Scaler iteration {i}")
                 print(f"adaptive_increment: {adaptive_increment}")
-
-                if i < loops - 1:
-                    if use_height == True:
-                        newheight = p.height + adaptive_increment
-                        p.height = newheight
-                        p.width = self.__get_width_from_ratio(newheight, current_ratio)
-                    elif use_height == False:
-                        newwidth = p.width + adaptive_increment
-                        p.width = newwidth
-                        p.height = self.__get_height_from_ratio(newwidth, current_ratio)
+                
+                last_image = i == loops - 1
+                
+                if use_height:
+                    p.height = max_height if last_image else (p.height + adaptive_increment)
+                    p.width = self.__get_width_from_ratio(p.height, current_ratio)
                 else:
-                    if use_height == True:
-                        p.height = max_height
-                        p.width = self.__get_width_from_ratio(max_height, current_ratio)
-                    else:
-                        p.width = max_width
-                        p.height = self.__get_height_from_ratio(max_width, current_ratio)
+                    p.width = max_width if last_image else (p.width + adaptive_increment)
+                    p.height = self.__get_height_from_ratio(p.width, current_ratio)
 
                 if opts.img2img_color_correction:
                     p.color_corrections = initial_color_corrections
@@ -146,39 +138,21 @@ class Script(scripts.Script):
                 
                 processed = processing.process_images(p)
                 
-                if i == loops - 1:              
+                if last_image:        
                     processed.images[0] = ImageEnhance.Sharpness(processed.images[0]).enhance(sharpness_strength)
                     processed.images[0] = ImageEnhance.Brightness(processed.images[0]).enhance(brightness_strength)
                     processed.images[0] = ImageEnhance.Color(processed.images[0]).enhance(color_strength)
                     processed.images[0] = ImageEnhance.Contrast(processed.images[0]).enhance(contrast_strength)
                     
-                    if not detail_strength == "None":
-                        if detail_strength == "Low":
-                            processed.images[0] = processed.images[0].filter(ImageFilter.DETAIL)
-                        elif detail_strength == "Medium":
-                            for j in range(2):
-                                processed.images[0] = processed.images[0].filter(ImageFilter.DETAIL)
-                        elif detail_strength == "High":
-                            for j in range(3):
-                                processed.images[0] = processed.images[0].filter(ImageFilter.DETAIL)
-                    if not smooth_strength == "None":
-                        if smooth_strength == "Low":
-                            processed.images[0] = processed.images[0].filter(ImageFilter.SMOOTH)
-                        elif smooth_strength == "Medium":
-                            for j in range(2):
-                                processed.images[0] = processed.images[0].filter(ImageFilter.SMOOTH)
-                        elif smooth_strength == "High":
-                            for j in range(3):
-                                processed.images[0] = processed.images[0].filter(ImageFilter.SMOOTH)
-                    if not blur_strength == "None":
-                        if blur_strength == "Low":
-                            processed.images[0] = processed.images[0].filter(ImageFilter.BLUR)
-                        elif blur_strength == "Medium":
-                            for j in range(2):
-                                processed.images[0] = processed.images[0].filter(ImageFilter.BLUR)
-                        elif blur_strength == "High":
-                            for j in range(3):
-                                processed.images[0] = processed.images[0].filter(ImageFilter.BLUR)
+                    for j in range(self.__get_strength_iterations(detail_strength)):
+                        processed.images[0] = processed.images[0].filter(ImageFilter.DETAIL)
+
+                    for j in range(self.__get_strength_iterations(smooth_strength)):
+                        processed.images[0] = processed.images[0].filter(ImageFilter.SMOOTH)
+
+                    for j in range(self.__get_strength_iterations(blur_strength)):
+                        processed.images[0] = processed.images[0].filter(ImageFilter.BLUR)
+
                     if contour_bool == True:
                         processed.images[0] = processed.images[0].filter(ImageFilter.CONTOUR)
                     
@@ -199,15 +173,7 @@ class Script(scripts.Script):
 
                 p.denoising_strength = min(max(p.denoising_strength * denoising_strength_change_factor, 0.1), 1)
                 
-            # grid = images.image_grid(history, rows=1)
-            # if opts.grid_save:
-            #     images.save_image(grid, p.outpath_grids, "grid", initial_seed, original_prompt, opts.grid_format, info=info, short_filename=not opts.grid_extended_filename, grid=True, p=p)
-
-            #grids.append(grid)
             all_images += history
-
-        #if opts.return_grid:
-        #    all_images = grids + all_images
 
         processed = Processed(p, all_images, p.all_seeds, initial_info,)
         
