@@ -7,7 +7,7 @@ The Loopback Scaler is an Automatic1111 Python script that enhances image resolu
 ## Key features
 - **Iterative enhancement**: The script processes the input image in several loops, with each loop increasing the resolution and refining the image quality. The image result from one loop is then inserted as the input image for the next loop which continually builds on what has been created.
 - **Denoise Change**: The denoising strength can be adjusted for each loop, allowing users to strike a balance between preserving details and reducing artifacts.
-- **Adaptive change**: The script adjusts the amount of resolution increase per loop based on the average intensity of the input image. This helps to produce more natural-looking results.
+- **Dimension Increase**: The script adjusts the amount of resolution increase per loop based on the easing option chosen. This helps to improve image quality at different points in the looping.
 - **Image filters**: Users can apply various PIL Image Filters to the final image, including detail enhancement, blur, smooth, and contour filters.
 - **Image adjustments**: The script provides sliders to fine-tune the sharpness, brightness, color, and contrast of the final image.
 
@@ -38,8 +38,8 @@ The number of times the script will inference your image and increase the resolu
 ## Denoise change
 This setting will increase or decrease the denoising strength every loop. A higher value will increase the denoising strength, while a lower value will decrease it. A setting of 1 keeps the denoising strength as it is set on the img2img settings.
 
-## Adaptive change
-This setting changes the amount of resolution increase per loop, keeping the changes from being linear. The higher the value the more significant the resolution changes toward the end of the looping.
+## Dimension Increase
+This setting changes the amount of resolution increase per loop, keeping the changes from being linear. You will get non-linear increases in image size based on which easing option you choose.  To increase the image size earlier in the process, choose one of the 'Ease Out' options, to increase the image size later in the process, choose an 'Ease In' option, to place image increases more toward the center of the process, use an 'Ease InOut' option.
 
 ## Maximum Image Width/Height
 These parameters set the maximum width and height of the final image. Always start with an image smaller than these dimensions. The smaller you start, the more impressive the results. I usually start at either 340x512 or 512x768.
