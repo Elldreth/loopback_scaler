@@ -20,7 +20,7 @@ class Script(scripts.Script):
 
     def show(self, is_img2img):
         return is_img2img
-    help_text = "<strong>Loops:</strong> The number of times the script will inference your image and increase the resolution in increments. The amount the resolution is increased each loop is determined by this number and the maximum image width/height.  The more loops, the more chances of your image picking up more detail, but also artifacts.  4 to 10 is what I find to work best, but you may like more or less.<br><br><strong>Denoise change:</strong> This setting will increase or decrease the denoising strength every loop.  A higher value will increase the denoising strength, while a lower value will decrease it. A setting of 1 keeps the denoising strength as it is set on the img2img settings.<br><br><strong>Adaptive change:</strong> This setting changes the amount of resolution increase per loop, keeping the changes from being linear.  The higher the value the more significant the resolution changes toward the end of the looping.<br><br><strong>Maximum Image Width/Height:</strong> These parameters set the maximum width and height of the final image. Always start with an image smaller than these dimensions.  The smaller you start, the more impressive the results. I usually start at either 340x512 or 512x768<br><br><strong>Detail, Blur, Smooth, Contour:</strong> These parameters are checkboxes that apply a PIL Image Filter to the final image.<br><br><strong>Sharpness, Brightness, Color, Contrast:</strong> These parameters are sliders that adjust the sharpness, brightness, color, and contrast of the image. 1 will result in no adjustments, less than one reduces these settings for the final image and greater than 1 increases these settings.<br><br><strong>Img2Img Settings:</strong>  I recommend creating an image with txt2img and then sending the result to img2img with the prompt and settings.  For this script I use these settings..<br><br><strong>Resize mode -</strong> Crop and resize<br><strong>Sampling method -</strong> DDIM<br><strong>Sampling steps -</strong> 30<br><strong>Width/Height -</strong> 340x512 or 512x768.  I’d try to keep to the aspect ratio of the original image but these can be set lower than the resolution of the original image<br><strong>CFG Scale -</strong> 6 to 8<br><strong>Denoising strength -</strong> 0.2 to 0.4 is usual.  The lower you go, the less change between loops.  The higher you go the less the end result will look like the original image.<br><strong>Seed -</strong> This doesn’t matter too much, I usually keep it at -1</p>"
+    help_text = "<strong>Loops:</strong> The number of times the script will inference your image and increase the resolution in increments. The amount the resolution is increased each loop is determined by this number and the maximum image width/height.  The more loops, the more chances of your image picking up more detail, but also artifacts.  4 to 10 is what I find to work best, but you may like more or less.<br><br><strong>Denoise change:</strong> This setting will increase or decrease the denoising strength every loop.  A higher value will increase the denoising strength, while a lower value will decrease it. A setting of 1 keeps the denoising strength as it is set on the img2img settings.<br><br><strong>Dimension change:</strong> This setting changes the amount of resolution increase or decrease per loop, keeping the changes from being linear. You will get non-linear increases in image size based on which easing option you choose.  To increase the image size earlier in the process, choose one of the 'Ease Out' options, to increase the image size later in the process, choose an 'Ease In' option, to place image increases more toward the center of the process, use an 'Ease InOut' option.<br><br><strong>Maximum Image Width/Height:</strong> These parameters set the maximum width and height of the final image. Always start with an image smaller than these dimensions.  The smaller you start, the more impressive the results. I usually start at either 340x512 or 512x768<br><br><strong>Detail, Blur, Smooth, Contour:</strong> These parameters are checkboxes that apply a PIL Image Filter to the final image.<br><br><strong>Sharpness, Brightness, Color, Contrast:</strong> These parameters are sliders that adjust the sharpness, brightness, color, and contrast of the image. 1 will result in no adjustments, less than one reduces these settings for the final image and greater than 1 increases these settings.<br><br><strong>Img2Img Settings:</strong>  I recommend creating an image with txt2img and then sending the result to img2img with the prompt and settings.  For this script I use these settings..<br><br><strong>Resize mode -</strong> Crop and resize<br><strong>Sampling method -</strong> DDIM<br><strong>Sampling steps -</strong> 30<br><strong>Width/Height -</strong> 340x512 or 512x768.  I’d try to keep to the aspect ratio of the original image but these can be set lower than the resolution of the original image<br><strong>CFG Scale -</strong> 6 to 8<br><strong>Denoising strength -</strong> 0.2 to 0.4 is usual.  The lower you go, the less change between loops.  The higher you go the less the end result will look like the original image.<br><strong>Seed -</strong> This doesn’t matter too much, I usually keep it at -1</p>"
     detail_choices = ["None", "Low", "Medium", "High"]
     dim_increase_options = ["Linear",
                             "Ease In: Sine",
@@ -131,7 +131,7 @@ class Script(scripts.Script):
         initial_color_corrections = [processing.setup_color_correction(p.init_images[0])]
 
         #determine oritinal image h/w ratio and max h/w ratio
-        current_ratio = p.height / p.width
+        base_ratio = p.height / p.width
         
         final_height = math.floor(p.height * scale) if use_scale else max_height
         final_width = math.floor(p.width * scale) if use_scale else max_width
@@ -143,7 +143,7 @@ class Script(scripts.Script):
         orig_width = p.width
         
         max_ratio = final_height / final_width
-        use_height = current_ratio >= max_ratio
+        use_height = base_ratio >= max_ratio
                     
         print("Starting Loopback Scaler")
         print(f"Original size:    {p.width}x{p.height}")
@@ -170,10 +170,10 @@ class Script(scripts.Script):
                 
                 if use_height:
                     p.height = final_height if last_image else (int((orig_height_diff * easing_factor) + orig_height ))
-                    p.width = self.__get_width_from_ratio(p.height, current_ratio)
+                    p.width = self.__get_width_from_ratio(p.height, base_ratio)
                 else:
                     p.width = final_width if last_image else (int((orig_width_diff * easing_factor) + orig_width))
-                    p.height = self.__get_height_from_ratio(p.width, current_ratio)
+                    p.height = self.__get_height_from_ratio(p.width, base_ratio)
                 
                 print()
                 print(f"Loopback Scaler:    {i+1}/{loops}")
