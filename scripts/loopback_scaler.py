@@ -2,6 +2,7 @@ import numpy as np
 import math
 import modules.scripts as scripts
 import gradio as gr
+import time
 from modules import processing, images
 from modules.processing import Processed
 from modules.shared import opts, state
@@ -97,10 +98,12 @@ class Script(scripts.Script):
         return perc
 
     def run(self, p, _, loops, denoising_strength_change_factor, max_width, max_height, scale, use_scale, detail_strength, blur_strength, contour_bool, smooth_strength, sharpness_strength, brightness_strength, color_strength, contrast_strength, dimension_increment_factor):
+        start_time = time.time()
         processing.fix_seed(p)
         batch_count = p.n_iter
         p.extra_generation_params = {
             "Denoising strength change factor": denoising_strength_change_factor,
+            "Dimension increment factor": dimension_increment_factor,
             "Add Detail": detail_strength,
             "Add Blur": blur_strength,
             "Smoothing": smooth_strength,
@@ -140,8 +143,10 @@ class Script(scripts.Script):
         use_height = current_ratio >= max_ratio
                     
         print("Starting Loopback Scaler")
-        print(f"Original size: {p.width}x{p.height}")
-        print(f"Final size:    {final_width}x{final_height}")
+        print(f"Original size:    {p.width}x{p.height}")
+        print(f"Final size:       {final_width}x{final_height}")
+        print(f"Denoising:        {denoising_strength_change_factor}")
+        print(f"Dimension change: {dimension_increment_factor}")
         
         for n in range(batch_count):
             history = []
@@ -156,8 +161,7 @@ class Script(scripts.Script):
                 loop_fraction = i/loops
                 easing_factor = self.__get_dimension_increment(dimension_increment_factor, loop_fraction)
 
-                print()
-                print(f"Loopback Scaler:    {i+1}/{loops}")
+               
                 
                 last_image = i == loops - 1
                 
@@ -167,8 +171,11 @@ class Script(scripts.Script):
                 else:
                     p.width = final_width if last_image else (int((orig_width_diff * easing_factor) + orig_width))
                     p.height = self.__get_height_from_ratio(p.width, current_ratio)
-                    
+                
+                print()
+                print(f"Loopback Scaler:    {i+1}/{loops}")
                 print(f"Iteration size:     {p.width}x{p.height}")
+                print(f"Denoising strength: {p.denoising_strength}")
 
                 if opts.img2img_color_correction:
                     p.color_corrections = initial_color_corrections
@@ -214,7 +221,9 @@ class Script(scripts.Script):
             
             all_images += history
 
+        end_time = time.time()
         print("Loopback Scaler: All Done!")
+        print(f"LS: {end_time - start_time} elapsed")
         processed = Processed(p, all_images, p.all_seeds, initial_info,)
         
         return processed
