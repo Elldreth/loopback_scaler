@@ -226,7 +226,7 @@ class Script(scripts.Script):
 
         end_time = time.time()
         print("Loopback Scaler: All Done!")
-        print(f"LS: {math.round(end_time - start_time)}s elapsed")
+        print(f"LS: {round(end_time - start_time)}s elapsed")
         print()
         processed = Processed(p, all_images, p.all_seeds, initial_info,)
         
