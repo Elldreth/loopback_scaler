@@ -39,9 +39,11 @@ class Script(scripts.Script):
         with gr.Blocks():
             with gr.Box():
                 with gr.Row():
-                    loops = gr.Slider(minimum=1, maximum=32, step=1, label='Loops:', value=4, elem_id=self.elem_id("loops"))
-                    denoising_strength_change_factor = gr.Slider(minimum=0.9, maximum=1.1, step=0.01, label='Denoise Change:', value=1, elem_id=self.elem_id("denoising_strength_change_factor"))            
                     dimension_increment_factor = gr.Dropdown(label='Dimension Increase:', choices=self.dim_increase_options, value="Linear", elem_id=self.elem_id("dimension_increment_factor"))
+                with gr.Row():
+                    loops = gr.Slider(minimum=1, maximum=32, step=1, label='Loops:', value=4, elem_id=self.elem_id("loops"))
+                with gr.Row():
+                    denoising_strength_change_factor = gr.Slider(minimum=0.9, maximum=1.1, step=0.01, label='Denoise Change:', value=1, elem_id=self.elem_id("denoising_strength_change_factor"))            
             with gr.Box():
                 with gr.Row():
                     max_width = gr.Slider(minimum=512, maximum=4096, step=64, label='Maximum Image Width:', value=1024, elem_id=self.elem_id("max_width"))
@@ -49,19 +51,20 @@ class Script(scripts.Script):
                 with gr.Row():
                     use_scale =  gr.Checkbox(label='Use Scale', value=False, elem_id=self.elem_id("use_scale"))
                     scale = gr.Slider(minimum=.5, maximum=4, step=.1, label='Scale Final Image:', value=1, elem_id=self.elem_id("final_image_scale"))
-            with gr.Box():
-                with gr.Row():
-                    detail_strength = gr.Dropdown(label='Add Detail', choices=self.detail_choices, value="None", elem_id=self.elem_id("detail_strength"))
-                    blur_strength = gr.Dropdown(label='Add Blur', choices=self.detail_choices, value="None", elem_id=self.elem_id("blur_bool"))
-                    smooth_strength = gr.Dropdown(label='Smoothing', choices=self.detail_choices, value="None", elem_id=self.elem_id("smooth_strength"))
-                    contour_bool = gr.Checkbox(label='Contour', value=False, elem_id=self.elem_id("contour_bool"))
-            with gr.Box():
-                with gr.Row():
-                    sharpness_strength = gr.Slider(minimum=0.1, maximum=2.0, step=0.01, label='Sharpness:', value=1.0, elem_id=self.elem_id("sharpness_strength")) 
-                    brightness_strength = gr.Slider(minimum=0.1, maximum=2.0, step=0.01, label='Brightness:', value=1.0, elem_id=self.elem_id("brightness_strength"))
-                with gr.Row():
-                    color_strength = gr.Slider(minimum=0.1, maximum=2.0, step=0.01, label='Color:', value=1.0, elem_id=self.elem_id("color_strength"))
-                    contrast_strength = gr.Slider(minimum=0.1, maximum=2.0, step=0.01, label='Contrast:', value=1.0, elem_id=self.elem_id("contrast_strength"))
+            with gr.Accordion("Final Image Filters"):
+                with gr.Box():
+                    with gr.Row():
+                        detail_strength = gr.Dropdown(label='Add Detail', choices=self.detail_choices, value="None", elem_id=self.elem_id("detail_strength"))
+                        blur_strength = gr.Dropdown(label='Add Blur', choices=self.detail_choices, value="None", elem_id=self.elem_id("blur_bool"))
+                        smooth_strength = gr.Dropdown(label='Smoothing', choices=self.detail_choices, value="None", elem_id=self.elem_id("smooth_strength"))
+                        contour_bool = gr.Checkbox(label='Contour', value=False, elem_id=self.elem_id("contour_bool"))
+                with gr.Box():
+                    with gr.Row():
+                        sharpness_strength = gr.Slider(minimum=0.1, maximum=2.0, step=0.01, label='Sharpness:', value=1.0, elem_id=self.elem_id("sharpness_strength")) 
+                        brightness_strength = gr.Slider(minimum=0.1, maximum=2.0, step=0.01, label='Brightness:', value=1.0, elem_id=self.elem_id("brightness_strength"))
+                    with gr.Row():
+                        color_strength = gr.Slider(minimum=0.1, maximum=2.0, step=0.01, label='Color:', value=1.0, elem_id=self.elem_id("color_strength"))
+                        contrast_strength = gr.Slider(minimum=0.1, maximum=2.0, step=0.01, label='Contrast:', value=1.0, elem_id=self.elem_id("contrast_strength"))
             with gr.Accordion("Info - Loopback Scaler", open=False):
                 helpinfo = gr.HTML("<p style=\"margin-bottom:0.75em\">{}</p>".format(self.help_text))
         return [helpinfo, loops, denoising_strength_change_factor, max_width, max_height, scale, use_scale, detail_strength, blur_strength, contour_bool, smooth_strength, sharpness_strength, brightness_strength, color_strength, contrast_strength, dimension_increment_factor]
@@ -223,7 +226,8 @@ class Script(scripts.Script):
 
         end_time = time.time()
         print("Loopback Scaler: All Done!")
-        print(f"LS: {end_time - start_time} elapsed")
+        print(f"LS: {math.round(end_time - start_time)}s elapsed")
+        print()
         processed = Processed(p, all_images, p.all_seeds, initial_info,)
         
         return processed
