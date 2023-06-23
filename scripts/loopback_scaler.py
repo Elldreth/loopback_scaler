@@ -99,6 +99,19 @@ class Script(scripts.Script):
         elif option == "Ease InOut: Quint": return 16 * perc * perc * perc * perc * perc if perc < 0.5 else 1 - math.pow(-2 * perc + 2, 5) / 2
         elif option == "Ease InOut: Circ": return (1 - math.sqrt(1 - math.pow(2 * perc, 2))) / 2 if perc < 0.5 else (math.sqrt(1 - math.pow(-2 * perc + 2, 2)) + 1) / 2
         return perc
+    
+    def __resize_to_nearest_multiple_of_m(self, width, height, m=8):
+        aspect_ratio = width / height
+        if width < height:
+            new_width = math.ceil(width / m) * m
+            new_height = round(new_width / aspect_ratio)
+            new_height = math.ceil(new_height / m) * m
+        else:
+            new_height = math.ceil(height / m) * m
+            new_width = round(new_height * aspect_ratio)
+            new_width = math.ceil(new_width / m) * m
+        
+        return int(new_width), int(new_height)
 
     def run(self, p, _, loops, denoising_strength_change_factor, max_width, max_height, scale, use_scale, detail_strength, blur_strength, contour_bool, smooth_strength, sharpness_strength, brightness_strength, color_strength, contrast_strength, dimension_increment_factor):
         start_time = time.time()
@@ -163,17 +176,16 @@ class Script(scripts.Script):
                 p.do_not_save_grid = True
                 loop_fraction = i/loops
                 easing_factor = self.__get_dimension_increment(dimension_increment_factor, loop_fraction)
-
-               
                 
                 last_image = i == loops - 1
                 
+                calc_height = final_height if last_image else (int((orig_height_diff * easing_factor) + orig_height ))
+                calc_width = final_width if last_image else (int((orig_width_diff * easing_factor) + orig_width))
+
                 if use_height:
-                    p.height = final_height if last_image else (int((orig_height_diff * easing_factor) + orig_height ))
-                    p.width = self.__get_width_from_ratio(p.height, base_ratio)
+                    p.width, p.height = self.__resize_to_nearest_multiple_of_m(width=self.__get_width_from_ratio(calc_height, base_ratio), height=calc_height)
                 else:
-                    p.width = final_width if last_image else (int((orig_width_diff * easing_factor) + orig_width))
-                    p.height = self.__get_height_from_ratio(p.width, base_ratio)
+                    p.width, p.height = self.__resize_to_nearest_multiple_of_m(width=calc_width, height=self.__get_height_from_ratio(calc_height, base_ratio))
                 
                 print()
                 print(f"Loopback Scaler:    {i+1}/{loops}")
@@ -185,6 +197,7 @@ class Script(scripts.Script):
 
                 state.job = f"Iteration {i + 1}/{loops}, batch {n + 1}/{batch_count}"
                 
+                # Processing image
                 processed = processing.process_images(p)
                 
                 if last_image:        
